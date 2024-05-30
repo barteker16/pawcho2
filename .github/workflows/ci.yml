@@ -54,3 +54,4 @@ jobs:
         uses: docker/scout-action@v1
         with:
           image: ${{ secrets.DOCKERHUB_USERNAME }}/example:${{ steps.meta.outputs.tags }}
+          command: scan
