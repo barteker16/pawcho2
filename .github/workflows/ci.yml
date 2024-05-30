@@ -1,4 +1,4 @@
-name: GHAction example
+name: GHAction example  
 
 on:
   workflow_dispatch:
@@ -12,32 +12,38 @@ jobs:
     runs-on: ubuntu-latest
       
     steps:
-      - name: Check out the source_repo
+      - 
+        name: Check out the source_repo
         uses: actions/checkout@v4
       
-      - name: Docker metadata definitions
+      -
+        name: Docker metadata definitions
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/example
+          images: ${{ vars.DOCKERHUB_USERNAME }}/example
           flavor: latest=false
           tags: |
             type=sha,priority=100,prefix=sha-,format=short
-            type=semver,priority=200,pattern={{version}}
+            type=semver,priority=200,pattern={{version}}   
 
-      - name: QEMU set-up
+      - 
+        name: QEMU set-up
         uses: docker/setup-qemu-action@v3
 
-      - name: Buildx set-up
+      - 
+        name: Buildx set-up
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to DockerHub
+      - 
+        name: Login to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - 
+        name: Build and push Docker image to private
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -45,17 +51,35 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           cache-from: |
-            type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/example:cache 
+            type=registry,ref=${{ vars.DOCKERHUB_USERNAME }}/ts3:cache 
           cache-to: |
-            type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/example:cache  
-          tags: ${{ steps.meta.outputs.tags }}
+            type=registry,ref=${{ vars.DOCKERHUB_USERNAME }}/ts3:cache  
+          tags: d4sk/ts3:zad2
 
-      - name: Scan image for vulnerabilities
+      - name: Analyze for critical and high CVEs
+        id: docker-scout-cves
         uses: docker/scout-action@v1
         with:
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/example:${{ steps.meta.outputs.tags }}
-          command: scan
+          command: cves
+          image: ${{vars.DOCKERHUB_USERNAME}}/ts3:zad2
+          format: sarif
+          sarif-file: cves
+          output: cves
+          only-severities: critical,high
           summary: true
-          format: json
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          write-comment: true
+          exit-code: true
+
+      - name: Push to public if no vuln found
+        if: success()
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          cache-from: |
+            type=registry,ref=${{ vars.DOCKERHUB_USERNAME }}/ts3:cache 
+          cache-to: |
+            type=registry,ref=${{ vars.DOCKERHUB_USERNAME }}/ts3:cache  
+          tags: ${{vars.DOCKERHUB_USERNAME}}/labtest:zad2
+    
