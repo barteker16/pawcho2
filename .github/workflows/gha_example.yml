@@ -60,12 +60,9 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          cache-from: |
-            type=registry,ref=${{ vars.DOCKERHUB_USERNAME }}/example:cache 
-          cache-to: |
-            type=registry,ref=${{ vars.DOCKERHUB_USERNAME }}/example:cache  
-          tags: ${{ steps.meta.outputs.tags }}
-
+          cache-from: type=registry,ref=/example:cache 
+          cache-to: type=registry,ref=/example:cache  
+          tags: example:sha-5185a30
       - 
         name: Search for high and critical vulnerabilities
         id: docker-scout-cves
